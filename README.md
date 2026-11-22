@@ -1,52 +1,51 @@
-# Atelier TOTP et authentification à deux facteurs
+# Atelier TOTP and Two-Factor Authentication
 
-Le site propose un parcours d’inscription et de connexion à deux facteurs, ainsi qu’un vérificateur autonome pour le générateur en ligne de commande.
+Atelier TOTP provides a two-factor sign-up and sign-in flow, plus a standalone verifier for the command-line generator.
 
-Le site utilise Python 3 avec SQLite 3.35 ou supérieur et la bibliothèque système **libqrencode** pour produire le QR code localement. Sur Debian ou Ubuntu, le paquet s’appelle `libqrencode4`. Le générateur autonome utilise uniquement la bibliothèque standard de Python.
+The site requires Python 3, SQLite 3.35 or later, and **libqrencode** to generate QR codes locally. On Debian and Ubuntu, the package is called `libqrencode4`. The standalone generator uses only the Python standard library.
 
-## Lancer le site
+## Run the site
 
-Depuis ce dossier, lancez le serveur et ouvrez <http://127.0.0.1:8000>.
+From the project root, start the server and open <http://127.0.0.1:8000>.
 
 ```sh
 python3 site-tests/server.py
 ```
 
-## Inscription et connexion à deux facteurs
+## Sign up and sign in with two-factor authentication
 
-1. Ouvrez **Sign up**, choisissez un nom d’utilisateur et un mot de passe d’au moins 12 caractères.
-2. Dans Microsoft Authenticator, appuyez sur **+**, choisissez **Other account** et scannez le QR du site. Saisissez le code à six chiffres du compte **Atelier TOTP**. La double authentification s’active et l’espace protégé s’ouvre après la confirmation.
-3. Déconnectez-vous. Pour vous reconnecter, saisissez le nom et le mot de passe, puis un nouveau code de l’application. Un code déjà accepté, y compris à l’inscription, ne peut être soumis à nouveau. Attendez le code de la période suivante si nécessaire.
+1. Select **Sign up** and choose a username and a password of at least 12 characters.
+2. In Microsoft Authenticator, tap **+**, choose **Other account**, and scan the QR code shown on the site. Enter the six-digit code for **Atelier TOTP** to enable two-factor authentication and open the protected account page.
+3. Sign out to try the login flow. Enter your username and password, then enter a fresh code from Microsoft Authenticator. Each code can be accepted only once, including the code used during setup. If needed, wait for the next code.
 
-Le serveur utilise une base locale `site-tests/accounts.sqlite3` par défaut. L’option `--db` permet de choisir un fichier différent. Les sessions et les limites de tentatives sont également enregistrées dans cette base.
+The server stores accounts, sessions, and rate limits in `site-tests/accounts.sqlite3` by default. Use `--db` to select a different database file.
 
-## Générateur et vérificateur autonomes
+## Standalone generator and verifier
 
-Dans un autre terminal, lancez le générateur puis collez le code affiché dans le **TOTP verifier** à la racine du site. Le générateur crée son propre secret partagé au premier lancement. Les comptes inscrits utilisent chacun un secret distinct, configuré dans leur application d’authentification.
+In a second terminal, run the generator and paste the displayed code into the **TOTP verifier** on the site's home page. The generator creates a shared secret on its first run. Each registered account has its own secret configured in Microsoft Authenticator.
 
 ```sh
 python3 generateur-totp/totp.py
 ```
 
-Relancez la commande pour récupérer le code en cours. Le générateur et le serveur utilisent automatiquement l’horloge de leur appareil. Le code a six chiffres et change toutes les 30 secondes.
+Run the command again to get the current code. The generator and server use their system clocks. By default, each code has six digits and is valid for the current 30-second period.
 
-## Tests reproductibles
+## Reproducible tests
 
-Pour tester une heure fixe, exécutez les deux commandes avec le même horodatage. Le formulaire demande toujours uniquement le code.
+To test at a fixed time, run the server and generator with the same Unix timestamp. The verifier form still takes only the code.
 
 ```sh
 python3 site-tests/server.py --at 59
 python3 generateur-totp/totp.py --at 59
 ```
 
-Les deux programmes acceptent aussi `--digits`, `--algorithm` et `--secret-file`. Par défaut, ils utilisent SHA-1 et le fichier privé `.totp-secret` à la racine du dossier. Si les projets sont déplacés dans des dossiers différents sur la même machine, donnez-leur le même chemin absolu avec `--secret-file`. Le serveur écoute uniquement sur l’interface locale.
+Both programs accept `--digits`, `--algorithm`, and `--secret-file`. By default, they use SHA-1 and the private `.totp-secret` file in the project root. If the projects are moved to separate directories on the same machine, pass the same absolute path to both programs with `--secret-file`. The server listens on the loopback interface.
 
+The server's fixed timestamp, verification window, and algorithm options apply to the standalone verifier. Account authentication uses the current time, SHA-1, six digits, and the current 30-second period.
 
-Les options d’heure fixe, de fenêtre et d’algorithme du serveur s’appliquent au vérificateur autonome. Pour les comptes, le serveur utilise toujours l’heure réelle, SHA-1, six chiffres et la période de 30 secondes en cours.
+## Automated tests
 
-## Tests automatisés
-
-Depuis ce dossier, lancez les tests du parcours HTTP et du générateur.
+From the project root, run the HTTP flow and standalone generator tests.
 
 ```sh
 PYTHONPATH=site-tests python3 -m unittest discover -s site-tests/tests -v
