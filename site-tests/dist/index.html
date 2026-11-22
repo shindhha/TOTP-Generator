@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Verify a locally generated TOTP code.">
+  <title>TOTP verifier</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <nav aria-label="Navigation"><a href="/login">Sign in</a>
+      <a href="/register">Sign up</a></nav>
+    <header>
+      <h1>TOTP verifier</h1>
+      <p>Enter the code shown by the generator.</p>
+    </header>
+    <form action="/verify" method="post">
+      <label for="code">{{digits}}-digit code</label>
+      <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code"
+             pattern="[0-9]{{quantifier}}" maxlength="{{digits}}" required>
+      <button type="submit">Verify code</button>
+      <output role="status" data-valid="{{valid}}">{{message}}</output>
+    </form>
+    <footer>Each code period lasts 30 seconds.</footer>
+  </main>
+</body>
+</html>
